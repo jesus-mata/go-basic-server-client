@@ -24,6 +24,14 @@ func main() {
 
 	g := e.Group("/client/api/v1")
 
+	g.GET("/health", func(c echo.Context) error {
+		slog.Info("Health check")
+
+		return c.JSON(http.StatusOK, map[string]string{
+			"status": "OK",
+		})
+	})
+
 	g.GET("/product/:id", func(c echo.Context) error {
 		id := c.Param("id")
 
