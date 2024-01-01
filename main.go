@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -72,6 +71,8 @@ func main() {
 
 		resp, err := client.Get(svcName + "/demo/api/v1/hello/" + name)
 		if err != nil {
+			b, _ := io.ReadAll(resp.Body)
+			slog.Info("Error response from demmo", slog.String("response", string(b)))
 			return c.JSON(http.StatusInternalServerError, map[string]string{
 				"message": "Error",
 				"error":   "Error greeting: " + err.Error(),
@@ -79,17 +80,8 @@ func main() {
 		}
 		defer resp.Body.Close()
 
-		b, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{
-				"message": "Error",
-				"error":   "Error reading response: " + err.Error(),
-			})
-		}
-		slog.Info("Response from demmo", slog.String("response", string(b)))
-
 		var hello Hello
-		json.NewDecoder(bytes.NewReader(b)).Decode(&hello)
+		json.NewDecoder(resp.Body).Decode(&hello)
 
 		return c.JSON(http.StatusOK, hello)
 	})
