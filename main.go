@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"time"
@@ -66,13 +66,21 @@ func main() {
 		)
 
 		client := http.Client{
+			Transport: &http.Transport{
+				Dial: (&net.Dialer{
+					Timeout:   30 * time.Second,
+					KeepAlive: 30 * time.Second,
+				}).Dial,
+				TLSHandshakeTimeout:   10 * time.Second,
+				ResponseHeaderTimeout: 10 * time.Second,
+				ExpectContinueTimeout: 1 * time.Second,
+			},
 			Timeout: 5 * time.Second,
 		}
 
 		resp, err := client.Get(svcName + "/demo/api/v1/hello/" + name)
 		if err != nil {
-			b, _ := io.ReadAll(resp.Body)
-			slog.Info("Error response from demmo", slog.String("response", string(b)))
+			slog.Error("Error greeting: " + err.Error())
 			return c.JSON(http.StatusInternalServerError, map[string]string{
 				"message": "Error",
 				"error":   "Error greeting: " + err.Error(),
